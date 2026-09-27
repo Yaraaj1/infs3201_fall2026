@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import promptSyncModule from 'prompt-sync'
 
 import {
@@ -5,21 +6,23 @@ import {
     validateStatus,
     validateOrder,
     buildOrder,
-    pricingRules
+    pricingRules,
+    getOrderDetails,
+    getCustomer,
+    getService,
+    getOrder,
+    getCustomerOrders,
+    getServices,
+    getOrders,
+    saveOrder,
+    saveUpdatedOrder
 } from './businessLogic.js'
 
-import {
-    findCustomer,
-    findService,
-    findOrder,
-    findOrdersByCustomer,
-    getAllServices,
-    getAllOrders,
-    createOrder,
-    updateOrder
-} from './persistence.js'
-
 let prompt = promptSyncModule()
+
+let minimumOrderCharge = Number(process.env.MINIMUM_ORDER_CHARGE ?? 0)
+let freeDeliveryThreshold = Number(process.env.FREE_DELIVERY_THRESHOLD ?? 0)
+let deliveryCharge = Number(process.env.DELIVERY_CHARGE ?? 0)
 
 /**
  * Displays all laundry services.
@@ -27,9 +30,9 @@ let prompt = promptSyncModule()
  * @returns {Promise<void>} Displays the services.
  */
 async function showServices() {
-    let services = await getAllServices()
+    let services = await getServices()
 
-    console.log("Service ID".padEnd(11)+ "Service".padEnd(26)+ "Unit".padEnd(9) +"Price")
+    console.log("Service ID".padEnd(11) + "Service".padEnd(26) + "Unit".padEnd(9) + "Price")
     console.log("---------- ------------------------- -------- --------")
 
     for (let service of services) {
@@ -50,15 +53,15 @@ async function showServices() {
 async function viewOrders() {
     let customerId = prompt("Enter customer ID: ")
 
-    let customer = await findCustomer(customerId)
+    let customer = await getCustomer(customerId)
 
     if (customer === null) {
         console.log("Customer not found")
         return
     }
 
-    let orders = await findOrdersByCustomer(customerId)
-    let services = await getAllServices()
+    let orders = await getCustomerOrders(customerId)
+    let services = await getServices()
 
     console.log("Orders for " + customer.name)
     console.log("Order ID Order Date Status Total")
@@ -67,11 +70,18 @@ async function viewOrders() {
     for (let order of orders) {
         let total = calcTotal(order, services)
 
+        let pricing = pricingRules(
+            total,
+            minimumOrderCharge,
+            freeDeliveryThreshold,
+            deliveryCharge
+        )
+
         console.log(
             order.orderId.padEnd(9) +
             order.orderDate.padEnd(11) +
             order.status.padEnd(10) +
-            total.toFixed(2)
+            pricing.finalTotal.toFixed(2)
         )
     }
 }
@@ -84,7 +94,7 @@ async function viewOrders() {
 async function updateOrderStatus() {
     let orderId = prompt("Enter order ID: ")
 
-    let order = await findOrder(orderId)
+    let order = await getOrder(orderId)
 
     if (order === null) {
         console.log("Order not found")
@@ -102,7 +112,7 @@ async function updateOrderStatus() {
 
     order.status = newStatus
 
-    await updateOrder(orderId, order)
+    await saveUpdatedOrder(orderId, order)
 
     console.log("Order status updated")
 }
@@ -115,14 +125,14 @@ async function updateOrderStatus() {
 async function createNewOrder() {
     let customerId = prompt("Enter customer ID: ")
 
-    let customer = await findCustomer(customerId)
+    let customer = await getCustomer(customerId)
 
     if (customer === null) {
         console.log("Customer not found")
         return
     }
 
-    let orders = await getAllOrders()
+    let orders = await getOrders()
 
     let maxOrderNumber = 0
 
@@ -142,7 +152,7 @@ async function createNewOrder() {
     let day = String(today.getDate()).padStart(2, "0")
     let orderDate = year + "-" + month + "-" + day
 
-    let services = await getAllServices()
+    let services = await getServices()
     let items = []
 
     while (true) {
@@ -186,11 +196,80 @@ async function createNewOrder() {
 
     let total = calcTotal(order, services)
 
-    await createOrder(order)
+    let pricing = pricingRules(
+        total,
+        minimumOrderCharge,
+        freeDeliveryThreshold,
+        deliveryCharge
+    )
+
+    await saveOrder(order)
 
     console.log("Order " + newOrderId + " created")
-    console.log("Total price: " + total.toFixed(2) + " QAR")
+    console.log("Total price: " + pricing.finalTotal.toFixed(2) + " QAR")
 }
+
+/**
+     * Displays the details and invoice for an order.
+     *
+     * @returns {Promise<void>} Displays the order details.
+     */
+async function viewOrderDetails() {
+    let orderId = prompt("Enter order ID: ")
+
+    let details = await getOrderDetails(
+        orderId,
+        minimumOrderCharge,
+        freeDeliveryThreshold,
+        deliveryCharge
+    )
+
+    if (details === null) {
+        console.log("Order not found")
+        return
+    }
+
+    let order = details.order
+    let customer = details.customer
+    let services = details.services
+    let pricing = details.pricing
+
+    console.log("")
+    console.log("Order ID: " + order.orderId)
+    console.log("Order Date: " + order.orderDate)
+    console.log("Status: " + order.status)
+    console.log("Customer: " + customer.name)
+
+    console.log("")
+    console.log("Service ID Service                  Qty   Unit Price   Total")
+    console.log("---------- ----------------------- ----- ------------ --------")
+
+    for (let item of order.items) {
+        for (let service of services) {
+            if (item.serviceId === service.serviceId) {
+                let itemTotal = item.quantity * service.price
+
+                console.log(
+                    service.serviceId.padEnd(11) +
+                    service.name.padEnd(24) +
+                    String(item.quantity).padEnd(6) +
+                    service.price.toFixed(2).padEnd(13) +
+                    itemTotal.toFixed(2)
+                )
+            }
+        }
+    }
+
+    let adjustment = pricing.serviceCharge - pricing.subtotal
+
+    console.log("")
+    console.log("Subtotal: " + pricing.subtotal.toFixed(2) + " QAR")
+    console.log("Adjustment: " + adjustment.toFixed(2) + " QAR")
+    console.log("Delivery: " + pricing.deliveryCharge.toFixed(2) + " QAR")
+    console.log("Final Total: " + pricing.finalTotal.toFixed(2) + " QAR")
+}
+
+
 
 /**
  * Displays the main application menu.
@@ -204,7 +283,8 @@ async function main() {
         console.log("2. View customer orders")
         console.log("3. Update order status")
         console.log("4. Create new order")
-        console.log("5. Exit")
+        console.log("5. View order details")
+        console.log("6. Exit")
 
         let choice = prompt("What is your choice> ")
 
@@ -221,11 +301,10 @@ async function main() {
             await createNewOrder()
         }
         else if (choice === "5") {
-            console.log("Thank you, bye!")
-            break
+            await viewOrderDetails()
         }
-        else {
-            console.log("Invalid choice")
+        else if (choice === "6") {
+            break
         }
     }
 }

@@ -1,3 +1,117 @@
+import {
+    findCustomer,
+    findService,
+    findOrder,
+    findOrdersByCustomer,
+    getAllServices,
+    getAllOrders,
+    createOrder,
+    updateOrder
+} from './persistence.js'
+
+/**
+ * Finds a customer.
+ */
+async function getCustomer(customerId) {
+    return await findCustomer(customerId)
+}
+
+/**
+ * Finds a service.
+ */
+async function getService(serviceId) {
+    return await findService(serviceId)
+}
+
+/**
+ * Finds an order.
+ */
+async function getOrder(orderId) {
+    return await findOrder(orderId)
+}
+
+/**
+ * Gets all orders for a customer.
+ *
+ */
+async function getCustomerOrders(customerId) {
+    return await findOrdersByCustomer(customerId)
+}
+
+/**
+ * Gets all laundry services.
+ */
+async function getServices() {
+    return await getAllServices()
+}
+
+/**
+ * Gets all orders.
+ */
+async function getOrders() {
+    return await getAllOrders()
+}
+
+/**
+ * Saves a new order.
+ *
+ */
+async function saveOrder(order) {
+    return await createOrder(order)
+}
+
+/**
+ * Saves an updated order.
+ *
+ */
+async function saveUpdatedOrder(orderId, order) {
+    return await updateOrder(orderId, order)
+}
+
+/**
+ * Gets the details and pricing information for an order.
+ *
+ * @param {String} orderId The order ID to find.
+ * @param {Number} minimumOrderCharge The minimum order charge.
+ * @param {Number} freeDeliveryThreshold The free delivery threshold.
+ * @param {Number} deliveryCharge The delivery charge.
+ * @returns {Object|null} The order details if found, otherwise null.
+ */
+async function getOrderDetails(
+    orderId,
+    minimumOrderCharge,
+    freeDeliveryThreshold,
+    deliveryCharge
+) {
+    let order = await findOrder(orderId)
+
+    if (order === null) {
+        return null
+    }
+
+    let customer = await findCustomer(order.customerId)
+    let services = await getAllServices()
+
+    let subtotal = calcTotal(order, services)
+
+    let pricing = pricingRules(
+        subtotal,
+        minimumOrderCharge,
+        freeDeliveryThreshold,
+        deliveryCharge
+    )
+
+    return {
+        order: order,
+        customer: customer,
+        services: services,
+        pricing: pricing
+    }
+}
+
+
+
+
 /**
  * Calculates the total price of an order.
  *
@@ -101,22 +215,30 @@ function buildOrder(orderId, customerId, items, orderDate) {
 }
 
 /**
- * Calculates pricing rules for an order.
+ * Calculates the pricing details for an order.
  *
- * @param {Number} total The original subtotal.
- * @returns {Object} The pricing information.
+ * @param {Number} total The original subtotal of the order.
+ * @param {Number} minimumOrderCharge The minimum service charge.
+ * @param {Number} freeDeliveryThreshold The subtotal threshold for free delivery.
+ * @param {Number} deliveryChargeAmount The delivery charge.
+ * @returns {Object} The subtotal, service charge, delivery charge, and final total.
  */
-function pricingRules(total) {
+function pricingRules(
+    total,
+    minimumOrderCharge,
+    freeDeliveryThreshold,
+    deliveryChargeAmount
+) {
     let serviceCharge = total
 
-    if (total < 25) {
-        serviceCharge = 25
+    if (total < minimumOrderCharge) {
+        serviceCharge = minimumOrderCharge
     }
 
     let deliveryCharge = 0
 
-    if (total < 50) {
-        deliveryCharge = 10
+    if (total < freeDeliveryThreshold) {
+        deliveryCharge = deliveryChargeAmount
     }
 
     let finalTotal = serviceCharge + deliveryCharge
@@ -134,5 +256,14 @@ export {
     validateStatus,
     validateOrder,
     buildOrder,
-    pricingRules
+    pricingRules,
+    getOrderDetails,
+    getCustomer,
+    getService,
+    getOrder,
+    getCustomerOrders,
+    getServices,
+    getOrders,
+    saveOrder,
+    saveUpdatedOrder
 }

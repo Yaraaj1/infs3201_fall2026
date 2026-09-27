@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "dotenv": "^18.0.4",
     "prompt-sync": "^4.2.0"
   }
 }
