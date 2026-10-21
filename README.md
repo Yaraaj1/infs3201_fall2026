@@ -45,3 +45,18 @@ Copy `.env.example` to `.env` and configure:
 MINIMUM_ORDER_CHARGE=25
 FREE_DELIVERY_THRESHOLD=50
 DELIVERY_CHARGE=10
+
+
+## MongoDB Indexes
+
+The following ascending indexes were created in MongoDB Compass to improve
+the performance of queries used by the application:
+
+- `customers.customerId` — used to find a customer by ID.
+- `services.serviceId` — used to find a laundry service by ID.
+- `orders.orderId` — used to find an order by ID.
+- `orders.customerId` — used to find all orders belonging to a customer.
+
+All four indexes use ascending order (1). The default `_id` indexes
+are also present in the collections.
+

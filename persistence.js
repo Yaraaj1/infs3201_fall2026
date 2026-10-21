@@ -1,4 +1,34 @@
-import * as fs from 'fs/promises'
+
+import { MongoClient } from 'mongodb'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const client = new MongoClient(process.env.MONGODB_URI)
+
+const database = client.db('infs3201_fall2026')
+
+const customers = database.collection('customers')
+const services = database.collection('services')
+const orders = database.collection('orders')
+
+let connectionPromise = null
+
+/**
+ * Connects to the MongoDB server.
+ *
+ * @returns {Promise<void>} A promise that resolves when connected.
+ */
+async function connectToDatabase() {
+    if (connectionPromise === null) {
+        connectionPromise = client.connect().catch(error => {
+            connectionPromise = null
+            throw error
+        })
+    }
+
+    await connectionPromise
+}
 
 /**
  * Finds a customer by customer ID.
@@ -7,16 +37,8 @@ import * as fs from 'fs/promises'
  * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function findCustomer(customerId) {
-    let data = await fs.readFile("customers.json", "utf8")
-    let customers = JSON.parse(data)
-
-    for (let customer of customers) {
-        if (customer.customerId === customerId) {
-            return customer
-        }
-    }
-
-    return null
+    await connectToDatabase()
+    return await customers.findOne({ customerId: customerId })
 }
 
 /**
@@ -26,16 +48,8 @@ async function findCustomer(customerId) {
  * @returns {Promise<Object|null>} The service if found, otherwise null.
  */
 async function findService(serviceId) {
-    let data = await fs.readFile("services.json", "utf8")
-    let services = JSON.parse(data)
-
-    for (let service of services) {
-        if (service.serviceId === serviceId) {
-            return service
-        }
-    }
-
-    return null
+    await connectToDatabase()
+    return await services.findOne({ serviceId: serviceId })
 }
 
 /**
@@ -45,16 +59,8 @@ async function findService(serviceId) {
  * @returns {Promise<Object|null>} The order if found, otherwise null.
  */
 async function findOrder(orderId) {
-    let data = await fs.readFile("orders.json", "utf8")
-    let orders = JSON.parse(data)
-
-    for (let order of orders) {
-        if (order.orderId === orderId) {
-            return order
-        }
-    }
-
-    return null
+    await connectToDatabase()
+    return await orders.findOne({ orderId: orderId })
 }
 
 /**
@@ -64,17 +70,8 @@ async function findOrder(orderId) {
  * @returns {Promise<Array<Object>>} The customer's orders.
  */
 async function findOrdersByCustomer(customerId) {
-    let data = await fs.readFile("orders.json", "utf8")
-    let orders = JSON.parse(data)
-    let customerOrders = []
-
-    for (let order of orders) {
-        if (order !== null && order.customerId === customerId) {
-            customerOrders.push(order)
-        }
-    }
-
-    return customerOrders
+    await connectToDatabase()
+    return await orders.find({ customerId: customerId }).toArray()
 }
 
 /**
@@ -83,10 +80,8 @@ async function findOrdersByCustomer(customerId) {
  * @returns {Promise<Array<Object>>} All available laundry services.
  */
 async function getAllServices() {
-    let data = await fs.readFile("services.json", "utf8")
-    let services = JSON.parse(data)
-
-    return services
+    await connectToDatabase()
+    return await services.find({}).toArray()
 }
 
 /**
@@ -95,58 +90,51 @@ async function getAllServices() {
  * @returns {Promise<Array<Object>>} All orders.
  */
 async function getAllOrders() {
-    let data = await fs.readFile("orders.json", "utf8")
-    let orders = JSON.parse(data)
-
-    return orders
+    await connectToDatabase()
+    return await orders.find({}).toArray()
 }
 
 /**
- * Creates a new order and saves it to the JSON file.
+ * Creates a new order.
  *
  * @param {Object} order The order to create.
  * @returns {Promise<Object>} The created order.
  */
 async function createOrder(order) {
-    let data = await fs.readFile("orders.json", "utf8")
-    let orders = JSON.parse(data)
+    await connectToDatabase()
 
-    orders.push(order)
-
-    let updatedOrders = JSON.stringify(orders, null, 4)
-
-    await fs.writeFile("orders.json", updatedOrders)
+    await orders.insertOne(order)
 
     return order
 }
 
 /**
- * Updates an existing order and saves it to the JSON file.
+ * Updates an existing order.
  *
  * @param {string} orderId The order ID to update.
  * @param {Object} updatedOrder The updated order information.
  * @returns {Promise<Object|null>} The updated order if found, otherwise null.
  */
 async function updateOrder(orderId, updatedOrder) {
-    let data = await fs.readFile("orders.json", "utf8")
-    let orders = JSON.parse(data)
+    await connectToDatabase()
 
-    for (let order of orders) {
-        if (order.orderId === orderId) {
-            order.customerId = updatedOrder.customerId
-            order.orderDate = updatedOrder.orderDate
-            order.status = updatedOrder.status
-            order.items = updatedOrder.items
-
-            let updatedOrders = JSON.stringify(orders, null, 4)
-
-            await fs.writeFile("orders.json", updatedOrders)
-
-            return order
+    let result = await orders.updateOne(
+        { orderId: orderId },
+        {
+            $set: {
+                customerId: updatedOrder.customerId,
+                orderDate: updatedOrder.orderDate,
+                status: updatedOrder.status,
+                items: updatedOrder.items
+            }
         }
+    )
+
+    if (result.matchedCount === 0) {
+        return null
     }
 
-    return null
+    return await orders.findOne({ orderId: orderId })
 }
 
 export {
