@@ -3,8 +3,8 @@ import * as fs from 'fs/promises'
 /**
  * Finds a customer by customer ID.
  *
- * @param {String} customerId The customer ID to find.
- * @returns {Object|null} The customer if found, otherwise null.
+ * @param {string} customerId The customer ID to find.
+ * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function findCustomer(customerId) {
     let data = await fs.readFile("customers.json", "utf8")
@@ -22,8 +22,8 @@ async function findCustomer(customerId) {
 /**
  * Finds a service by service ID.
  *
- * @param {String} serviceId The service ID to find.
- * @returns {Object|null} The service if found, otherwise null.
+ * @param {string} serviceId The service ID to find.
+ * @returns {Promise<Object|null>} The service if found, otherwise null.
  */
 async function findService(serviceId) {
     let data = await fs.readFile("services.json", "utf8")
@@ -41,8 +41,8 @@ async function findService(serviceId) {
 /**
  * Finds an order by order ID.
  *
- * @param {String} orderId The order ID to find.
- * @returns {Object|null} The order if found, otherwise null.
+ * @param {string} orderId The order ID to find.
+ * @returns {Promise<Object|null>} The order if found, otherwise null.
  */
 async function findOrder(orderId) {
     let data = await fs.readFile("orders.json", "utf8")
@@ -60,8 +60,8 @@ async function findOrder(orderId) {
 /**
  * Finds all orders belonging to a customer.
  *
- * @param {String} customerId The customer ID to search for.
- * @returns {Array} The customer's orders.
+ * @param {string} customerId The customer ID to search for.
+ * @returns {Promise<Array<Object>>} The customer's orders.
  */
 async function findOrdersByCustomer(customerId) {
     let data = await fs.readFile("orders.json", "utf8")
@@ -80,7 +80,7 @@ async function findOrdersByCustomer(customerId) {
 /**
  * Gets all laundry services.
  *
- * @returns {Array} All available laundry services.
+ * @returns {Promise<Array<Object>>} All available laundry services.
  */
 async function getAllServices() {
     let data = await fs.readFile("services.json", "utf8")
@@ -92,7 +92,7 @@ async function getAllServices() {
 /**
  * Gets all orders.
  *
- * @returns {Array} All orders.
+ * @returns {Promise<Array<Object>>} All orders.
  */
 async function getAllOrders() {
     let data = await fs.readFile("orders.json", "utf8")
@@ -102,10 +102,10 @@ async function getAllOrders() {
 }
 
 /**
- * Creates a new order.
+ * Creates a new order and saves it to the JSON file.
  *
  * @param {Object} order The order to create.
- * @returns {Object} The created order.
+ * @returns {Promise<Object>} The created order.
  */
 async function createOrder(order) {
     let data = await fs.readFile("orders.json", "utf8")
@@ -121,11 +121,11 @@ async function createOrder(order) {
 }
 
 /**
- * Updates an existing order.
+ * Updates an existing order and saves it to the JSON file.
  *
- * @param {String} orderId The order ID to update.
- * @param {Object} updatedOrder The updated order.
- * @returns {Object|null} The updated order if found, otherwise null.
+ * @param {string} orderId The order ID to update.
+ * @param {Object} updatedOrder The updated order information.
+ * @returns {Promise<Object|null>} The updated order if found, otherwise null.
  */
 async function updateOrder(orderId, updatedOrder) {
     let data = await fs.readFile("orders.json", "utf8")

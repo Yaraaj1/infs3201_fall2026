@@ -10,43 +10,58 @@ import {
 } from './persistence.js'
 
 /**
- * Finds a customer.
+ * Finds a customer by their ID.
+ *
+ * @param {string} customerId The ID of the customer to find.
+ * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function getCustomer(customerId) {
     return await findCustomer(customerId)
 }
 
 /**
- * Finds a service.
+ * Gets a laundry service by its ID.
+ *
+ * @param {string} serviceId The ID of the service to find.
+ * @returns {Promise<Object|null>} The service if found, otherwise null.
  */
 async function getService(serviceId) {
     return await findService(serviceId)
 }
 
 /**
- * Finds an order.
+ * Gets the details of an order.
+ *
+ * @param {string} oid The ID of the order to find.
+ * @returns {Promise<Object|null>} The order if found, otherwise null.
  */
 async function getOrder(orderId) {
     return await findOrder(orderId)
 }
 
 /**
- * Gets all orders for a customer.
+ * Gets all orders belonging to a customer.
  *
+ * @param {string} customerId The ID of the customer.
+ * @returns {Promise<Array<Object>>} The customer's orders.
  */
 async function getCustomerOrders(customerId) {
     return await findOrdersByCustomer(customerId)
 }
 
 /**
- * Gets all laundry services.
+ * Gets all available laundry services.
+ *
+ * @returns {Promise<Array<Object>>} A list of laundry services.
  */
 async function getServices() {
     return await getAllServices()
 }
 
 /**
- * Gets all orders.
+ * Gets all orders in the system.
+ *
+ * @returns {Promise<Array<Object>>} A list of orders.
  */
 async function getOrders() {
     return await getAllOrders()
@@ -55,6 +70,8 @@ async function getOrders() {
 /**
  * Saves a new order.
  *
+ * @param {Object} order The order to save.
+ * @returns {Promise<Object>} The saved order.
  */
 async function saveOrder(order) {
     return await createOrder(order)
@@ -63,19 +80,22 @@ async function saveOrder(order) {
 /**
  * Saves an updated order.
  *
+ * @param {string} orderId The ID of the order to update.
+ * @param {Object} order The updated order information.
+ * @returns {Promise<Object|null>} The updated order, or null if it was not found.
  */
 async function saveUpdatedOrder(orderId, order) {
     return await updateOrder(orderId, order)
 }
 
 /**
- * Gets the details and pricing information for an order.
+ * Gets an order with its customer, services, and pricing information.
  *
- * @param {String} orderId The order ID to find.
- * @param {Number} minimumOrderCharge The minimum order charge.
- * @param {Number} freeDeliveryThreshold The free delivery threshold.
- * @param {Number} deliveryCharge The delivery charge.
- * @returns {Object|null} The order details if found, otherwise null.
+ * @param {string} orderId The ID of the order to find.
+ * @param {number} minimumOrderCharge The minimum order charge.
+ * @param {number} freeDeliveryThreshold The subtotal threshold for free delivery.
+ * @param {number} deliveryCharge The delivery charge.
+ * @returns {Promise<Object|null>} The order details, or null if the order does not exist.
  */
 async function getOrderDetails(
     orderId,

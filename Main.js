@@ -162,7 +162,7 @@ async function createNewOrder() {
             break
         }
 
-        let service = await findService(serviceId)
+        let service = await getService(serviceId)
 
         if (service === null) {
             console.log("Service not found")
