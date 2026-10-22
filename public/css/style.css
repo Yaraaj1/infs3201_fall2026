@@ -1,0 +1,20 @@
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background-color: #eeeeee;
+    padding: 20px;
+}
+
+nav a {
+    margin-right: 15px;
+}
+
+main {
+    padding: 20px;
+}
