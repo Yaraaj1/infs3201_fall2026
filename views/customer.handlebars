@@ -1,0 +1,50 @@
+
+<h2>Find Customer</h2>
+
+<form action="/customer" method="POST">
+    <label for="customerId">Customer ID:</label>
+    <input
+        type="text"
+        id="customerId"
+        name="customerId"
+        required
+    >
+    <button type="submit">Find Customer</button>
+</form>
+
+
+
+{{#if customer}}
+    <h2>Customer Details</h2>
+
+    <p><strong>Customer ID:</strong> {{customer.customerId}}</p>
+
+    {{#if customer.name}}
+        <p><strong>Name:</strong> {{customer.name}}</p>
+    {{/if}}
+
+    <h2>Customer Orders</h2>
+
+    {{#if orders.length}}
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Order Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each orders}}
+                    <tr>
+                        <td>{{this.orderId}}</td>
+                        <td>{{this.orderDate}}</td>
+                        <td>{{this.status}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    {{else}}
+        <p>This customer has no orders.</p>
+    {{/if}}
+{{/if}}
