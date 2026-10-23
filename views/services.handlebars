@@ -1,0 +1,27 @@
+
+<h2>Our Laundry Services</h2>
+
+{{#if services.length}}
+    <table>
+        <thead>
+            <tr>
+                <th>Service ID</th>
+                <th>Service Name</th>
+                <th>Unit</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each services}}
+                <tr>
+                    <td>{{this.serviceId}}</td>
+                    <td>{{this.name}}</td>
+                    <td>{{this.unit}}</td>
+                    <td>{{this.price}}</td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+{{else}}
+    <p>No services are currently available.</p>
+{{/if}}
