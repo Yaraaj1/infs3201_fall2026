@@ -6,7 +6,9 @@ import {
     getCustomer,
     getCustomerOrders,
     getServices,
-    getOrders
+    getOrders,
+    getOrder,
+    saveUpdatedOrder
 } from './businessLogic.js'
 
 
@@ -57,6 +59,43 @@ app.get('/orders', async function (req, res) {
         res.status(500).send('Unable to retrieve orders')
     }
 })
+
+
+app.get('/update-status', function (req, res) {
+    res.render('update-status', {
+        title: 'Update Order Status'
+    })
+})
+
+
+app.post('/update-status', async function (req, res) {
+    let orderId = req.body.orderId.trim()
+    let status = req.body.status
+
+    let validStatuses = ['Received', 'Ready', 'Delivered']
+
+    if (!validStatuses.includes(status)) {
+        return res.status(400).send('Invalid State')
+    }
+
+    try {
+        let order = await getOrder(orderId)
+
+        if (order === null) {
+            return res.status(404).send('Order not found')
+        }
+
+        order.status = status
+
+        await saveUpdatedOrder(orderId, order)
+
+        res.redirect('/orders')
+    } catch (error) {
+        console.error(error)
+        res.status(500).send('Unable to update order status')
+    }
+})
+
 
 
 
