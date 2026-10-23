@@ -36,3 +36,19 @@ td {
 th {
     background-color: #f2f2f2;
 }
+
+
+.status-Received {
+    color: #856404;
+    background-color: #fff3cd;
+}
+
+.status-Ready {
+    color: #155724;
+    background-color: #d4edda;
+}
+
+.status-Delivered {
+    color: #004085;
+    background-color: #cce5ff;
+}

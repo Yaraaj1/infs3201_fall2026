@@ -1,0 +1,36 @@
+<h2>All Orders</h2>
+
+{{#if orders.length}}
+<table>
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer ID</th>
+            <th>Service ID</th>
+            <th>Quantity</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each orders}}
+        <tr>
+            <td>{{this.orderId}}</td>
+            <td>{{this.customerId}}</td>
+            <td>
+                {{#each this.items}}
+                {{this.serviceId}}<br>
+                {{/each}}
+            </td>
+            <td>
+                {{#each this.items}}
+                {{this.quantity}}<br>
+                {{/each}}
+            </td>
+            <td class="status-{{this.status}}">{{this.status}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+{{else}}
+<p>No orders are currently available.</p>
+{{/if}}

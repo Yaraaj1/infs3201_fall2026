@@ -5,7 +5,8 @@ import { engine } from 'express-handlebars'
 import {
     getCustomer,
     getCustomerOrders,
-    getServices
+    getServices,
+    getOrders
 } from './businessLogic.js'
 
 
@@ -41,6 +42,22 @@ app.get('/services', async function (req, res) {
         res.status(500).send('Unable to retrieve services')
     }
 })
+
+
+app.get('/orders', async function (req, res) {
+    try {
+        let orders = await getOrders()
+
+        res.render('orders', {
+            title: 'All Orders',
+            orders: orders
+        })
+    } catch (error) {
+        console.error(error)
+        res.status(500).send('Unable to retrieve orders')
+    }
+})
+
 
 
 app.get('/customer', function (req, res) {
