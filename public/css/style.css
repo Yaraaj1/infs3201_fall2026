@@ -43,6 +43,11 @@ th {
     background-color: #fff3cd;
 }
 
+.status-Washing {
+    color: #7711bb;
+    background-color: #eab5e7;
+}
+
 .status-Ready {
     color: #155724;
     background-color: #d4edda;

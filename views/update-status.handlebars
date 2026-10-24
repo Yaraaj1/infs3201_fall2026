@@ -1,4 +1,3 @@
-
 <h2>Update Order Status</h2>
 
 <form action="/update-status" method="POST">
@@ -6,13 +5,15 @@
     <input type="text" id="orderId" name="orderId" required>
 
     <label for="status">New Status:</label>
+
     <select id="status" name="status" required>
         <option value="">Select a status</option>
         <option value="Received">Received</option>
+        <option value="Washing">Washing</option>
         <option value="Ready">Ready</option>
         <option value="Delivered">Delivered</option>
-        
     </select>
+
 
     <button type="submit">Update Status</button>
 </form>

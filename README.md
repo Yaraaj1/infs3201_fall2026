@@ -47,7 +47,7 @@ FREE_DELIVERY_THRESHOLD=50
 DELIVERY_CHARGE=10
 
 
-## MongoDB Indexes
+### MongoDB Indexes
 
 The following ascending indexes were created in MongoDB Compass to improve
 the performance of queries used by the application:

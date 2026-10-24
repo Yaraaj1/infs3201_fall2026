@@ -8,7 +8,8 @@ import {
     getServices,
     getOrders,
     getOrder,
-    saveUpdatedOrder
+    saveUpdatedOrder,
+    validateStatus
 } from './businessLogic.js'
 
 
@@ -69,14 +70,14 @@ app.get('/update-status', function (req, res) {
 
 
 app.post('/update-status', async function (req, res) {
-    let orderId = req.body.orderId.trim()
+    let orderId = (req.body.orderId || '').trim()
     let status = req.body.status
 
-    let validStatuses = ['Received', 'Ready', 'Delivered']
-
-    if (!validStatuses.includes(status)) {
-        return res.status(400).send('Invalid State')
+    if (orderId === '') {
+        return res.status(400).send('Order ID is required')
     }
+
+
 
     try {
         let order = await getOrder(orderId)
@@ -85,11 +86,19 @@ app.post('/update-status', async function (req, res) {
             return res.status(404).send('Order not found')
         }
 
+        if (typeof status !== 'string' || !validateStatus(order.status, status)) {
+            return res.status(400).send('Invalid State')
+        }
+
         order.status = status
 
-        await saveUpdatedOrder(orderId, order)
+        let updatedOrder = await saveUpdatedOrder(orderId, order)
 
-        res.redirect('/orders')
+        if (updatedOrder === null) {
+            return res.status(404).send('Order not found')
+        }
+
+        return res.redirect('/orders')
     } catch (error) {
         console.error(error)
         res.status(500).send('Unable to update order status')
@@ -108,11 +117,12 @@ app.get('/customer', function (req, res) {
 
 
 app.post('/customer', async function (req, res) {
-    let customerId = req.body.customerId.trim()
+    let customerId = (req.body.customerId || '').trim()
 
     if (customerId === '') {
         return res.status(400).send('Customer ID is required')
     }
+
 
     try {
         let customer = await getCustomer(customerId)
@@ -134,6 +144,10 @@ app.post('/customer', async function (req, res) {
     }
 })
 
+
+app.use(function (req, res) {
+    res.status(404).send('Page not found')
+})
 
 
 app.listen(PORT, function () {
