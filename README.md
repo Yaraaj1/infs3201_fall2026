@@ -1,6 +1,10 @@
 # INFS3201 – Web Technologies II
 ## Assignment 3 – Laundry Management System
 
+connection string: mongodb+srv://60309760:12class34@infs3201.gxqnptm.mongodb.net/
+
+
+
 This project builds on Assignment 2 by using MongoDB for data storage and Express with Handlebars to display the website.
 
 ## Application Structure
