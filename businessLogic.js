@@ -1,5 +1,6 @@
 import {
     findCustomer,
+    findCustomerByPhone,
     findService,
     findOrder,
     findOrdersByCustomer,
@@ -18,6 +19,18 @@ import {
 async function getCustomer(customerId) {
     return await findCustomer(customerId)
 }
+
+
+/**
+ * Finds a customer by their phone number.
+ *
+ * @param {string} phoneNumber The phone number of the customer to find.
+ * @returns {Promise<Object|null>} The customer if found, otherwise null.
+ */
+async function getCustomerByPhone(phoneNumber) {
+    return await findCustomerByPhone(phoneNumber)
+}
+
 
 /**
  * Gets a laundry service by its ID.
@@ -279,6 +292,7 @@ export {
     pricingRules,
     getOrderDetails,
     getCustomer,
+    getCustomerByPhone,
     getService,
     getOrder,
     getCustomerOrders,

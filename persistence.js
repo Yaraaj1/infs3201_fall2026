@@ -41,6 +41,19 @@ async function findCustomer(customerId) {
     return await customers.findOne({ customerId: customerId })
 }
 
+
+/**
+ * Finds a customer by phone number.
+ *
+ * @param {string} phoneNumber The phone number to find.
+ * @returns {Promise<Object|null>} The customer if found, otherwise null.
+ */
+async function findCustomerByPhone(phoneNumber) {
+    await connectToDatabase()
+    return await customers.findOne({ phone: phoneNumber })
+}
+
+
 /**
  * Finds a service by service ID.
  *
@@ -139,6 +152,7 @@ async function updateOrder(orderId, updatedOrder) {
 
 export {
     findCustomer,
+    findCustomerByPhone,
     findService,
     findOrder,
     findOrdersByCustomer,

@@ -4,6 +4,7 @@ import { engine } from 'express-handlebars'
 
 import {
     getCustomer,
+    getCustomerByPhone,
     getCustomerOrders,
     getServices,
     getOrders,
@@ -11,7 +12,6 @@ import {
     saveUpdatedOrder,
     validateStatus
 } from './businessLogic.js'
-
 
 const app = express()
 const PORT = 3001
@@ -116,22 +116,22 @@ app.get('/customer', function (req, res) {
 
 
 
-app.post('/customer', async function (req, res) {
-    let customerId = (req.body.customerId || '').trim()
 
-    if (customerId === '') {
-        return res.status(400).send('Customer ID is required')
+app.post('/customer', async function (req, res) {
+    let phoneNumber = (req.body.phone || '').trim()
+
+    if (phoneNumber === '') {
+        return res.status(400).send('Customer phone number is required')
     }
 
-
     try {
-        let customer = await getCustomer(customerId)
+        let customer = await getCustomerByPhone(phoneNumber)
 
         if (customer === null) {
             return res.status(404).send('Customer not found')
         }
 
-        let orders = await getCustomerOrders(customerId)
+        let orders = await getCustomerOrders(customer.customerId)
 
         res.render('customer', {
             title: 'Find Customer',
@@ -143,6 +143,7 @@ app.post('/customer', async function (req, res) {
         res.status(500).send('Unable to retrieve customer information')
     }
 })
+
 
 
 app.use(function (req, res) {
