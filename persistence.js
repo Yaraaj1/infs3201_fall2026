@@ -1,5 +1,5 @@
 
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -21,26 +21,52 @@ let connectionPromise = null
  */
 async function connectToDatabase() {
     if (connectionPromise === null) {
-        connectionPromise = client.connect().catch(error => {
-            connectionPromise = null
-            throw error
-        })
+        connectionPromise = client.connect()
     }
 
-    await connectionPromise
+    try {
+        await connectionPromise
+    } catch (error) {
+        connectionPromise = null
+        throw error
+    }
 }
 
 /**
- * Finds a customer by customer ID.
+ * Converts a string ID into a MongoDB ObjectId.
  *
- * @param {string} customerId The customer ID to find.
+ * @param {string|ObjectId} id The ID to convert.
+ * @returns {ObjectId|null} The ObjectId if valid, otherwise null.
+ */
+function convertToObjectId(id) {
+    if (id instanceof ObjectId) {
+        return id
+    }
+
+    if (typeof id !== 'string' || !/^[0-9a-fA-F]{24}$/.test(id)) {
+        return null
+    }
+
+    return new ObjectId(id)
+}
+
+/**
+ * Finds a customer by MongoDB ID.
+ *
+ * @param {string|ObjectId} customerId The customer's MongoDB ID.
  * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function findCustomer(customerId) {
     await connectToDatabase()
-    return await customers.findOne({ customerId: customerId })
-}
 
+    let objectId = convertToObjectId(customerId)
+
+    if (objectId === null) {
+        return null
+    }
+
+    return await customers.findOne({ _id: objectId })
+}
 
 /**
  * Finds a customer by phone number.
@@ -50,41 +76,62 @@ async function findCustomer(customerId) {
  */
 async function findCustomerByPhone(phoneNumber) {
     await connectToDatabase()
+
     return await customers.findOne({ phone: phoneNumber })
 }
 
-
 /**
- * Finds a service by service ID.
+ * Finds a service by MongoDB ID.
  *
- * @param {string} serviceId The service ID to find.
+ * @param {string|ObjectId} serviceId The service's MongoDB ID.
  * @returns {Promise<Object|null>} The service if found, otherwise null.
  */
 async function findService(serviceId) {
     await connectToDatabase()
-    return await services.findOne({ serviceId: serviceId })
+
+    let objectId = convertToObjectId(serviceId)
+
+    if (objectId === null) {
+        return null
+    }
+
+    return await services.findOne({ _id: objectId })
 }
 
 /**
- * Finds an order by order ID.
+ * Finds an order by MongoDB ID.
  *
- * @param {string} orderId The order ID to find.
+ * @param {string|ObjectId} orderId The order's MongoDB ID.
  * @returns {Promise<Object|null>} The order if found, otherwise null.
  */
 async function findOrder(orderId) {
     await connectToDatabase()
-    return await orders.findOne({ orderId: orderId })
+
+    let objectId = convertToObjectId(orderId)
+
+    if (objectId === null) {
+        return null
+    }
+
+    return await orders.findOne({ _id: objectId })
 }
 
 /**
  * Finds all orders belonging to a customer.
  *
- * @param {string} customerId The customer ID to search for.
+ * @param {string|ObjectId} customerId The customer's MongoDB ID.
  * @returns {Promise<Array<Object>>} The customer's orders.
  */
 async function findOrdersByCustomer(customerId) {
     await connectToDatabase()
-    return await orders.find({ customerId: customerId }).toArray()
+
+    let objectId = convertToObjectId(customerId)
+
+    if (objectId === null) {
+        return []
+    }
+
+    return await orders.find({ customerId: objectId }).toArray()
 }
 
 /**
@@ -94,6 +141,7 @@ async function findOrdersByCustomer(customerId) {
  */
 async function getAllServices() {
     await connectToDatabase()
+
     return await services.find({}).toArray()
 }
 
@@ -104,6 +152,7 @@ async function getAllServices() {
  */
 async function getAllOrders() {
     await connectToDatabase()
+
     return await orders.find({}).toArray()
 }
 
@@ -116,29 +165,77 @@ async function getAllOrders() {
 async function createOrder(order) {
     await connectToDatabase()
 
-    await orders.insertOne(order)
+    let customerObjectId = convertToObjectId(order.customerId)
 
-    return order
+    if (customerObjectId === null) {
+        throw new Error('Invalid customer ID')
+    }
+
+    let newOrder = Object.assign({}, order)
+
+    newOrder.customerId = customerObjectId
+    newOrder.items = []
+
+    for (let i = 0; i < order.items.length; i++) {
+        let serviceObjectId = convertToObjectId(order.items[i].serviceId)
+
+        if (serviceObjectId === null) {
+            throw new Error('Invalid service ID')
+        }
+
+        let newItem = Object.assign({}, order.items[i])
+        newItem.serviceId = serviceObjectId
+
+        newOrder.items.push(newItem)
+    }
+
+    let result = await orders.insertOne(newOrder)
+
+    newOrder._id = result.insertedId
+
+    return newOrder
 }
 
 /**
  * Updates an existing order.
  *
- * @param {string} orderId The order ID to update.
+ * @param {string|ObjectId} orderId The order's MongoDB ID.
  * @param {Object} updatedOrder The updated order information.
  * @returns {Promise<Object|null>} The updated order if found, otherwise null.
  */
 async function updateOrder(orderId, updatedOrder) {
     await connectToDatabase()
 
+    let orderObjectId = convertToObjectId(orderId)
+    let customerObjectId = convertToObjectId(updatedOrder.customerId)
+
+    if (orderObjectId === null || customerObjectId === null) {
+        return null
+    }
+
+    let updatedItems = []
+
+    for (let i = 0; i < updatedOrder.items.length; i++) {
+        let serviceObjectId = convertToObjectId(updatedOrder.items[i].serviceId)
+
+        if (serviceObjectId === null) {
+            return null
+        }
+
+        let updatedItem = Object.assign({}, updatedOrder.items[i])
+        updatedItem.serviceId = serviceObjectId
+
+        updatedItems.push(updatedItem)
+    }
+
     let result = await orders.updateOne(
-        { orderId: orderId },
+        { _id: orderObjectId },
         {
             $set: {
-                customerId: updatedOrder.customerId,
+                customerId: customerObjectId,
                 orderDate: updatedOrder.orderDate,
                 status: updatedOrder.status,
-                items: updatedOrder.items
+                items: updatedItems
             }
         }
     )
@@ -147,7 +244,7 @@ async function updateOrder(orderId, updatedOrder) {
         return null
     }
 
-    return await orders.findOne({ orderId: orderId })
+    return await orders.findOne({ _id: orderObjectId })
 }
 
 export {

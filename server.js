@@ -131,7 +131,7 @@ app.post('/customer', async function (req, res) {
             return res.status(404).send('Customer not found')
         }
 
-        let orders = await getCustomerOrders(customer.customerId)
+        let orders = await getCustomerOrders(customer._id)
 
         res.render('customer', {
             title: 'Find Customer',

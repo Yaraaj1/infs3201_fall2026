@@ -1,7 +1,6 @@
 
 <h2>Find Customer</h2>
 
-
 <form action="/customer" method="POST">
     <label for="phone">Customer Phone Number:</label>
     <input
@@ -13,12 +12,10 @@
     <button type="submit">Find Customer</button>
 </form>
 
-
-
 {{#if customer}}
     <h2>Customer Details</h2>
 
-    <p><strong>Customer ID:</strong> {{customer.customerId}}</p>
+    <p><strong>Customer ID:</strong> {{customer._id}}</p>
 
     {{#if customer.name}}
         <p><strong>Name:</strong> {{customer.name}}</p>
@@ -38,7 +35,7 @@
             <tbody>
                 {{#each orders}}
                     <tr>
-                        <td>{{this.orderId}}</td>
+                        <td>{{this._id}}</td>
                         <td>{{this.orderDate}}</td>
                         <td>{{this.status}}</td>
                     </tr>

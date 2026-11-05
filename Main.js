@@ -1,3 +1,4 @@
+
 import 'dotenv/config'
 import promptSyncModule from 'prompt-sync'
 
@@ -13,7 +14,6 @@ import {
     getOrder,
     getCustomerOrders,
     getServices,
-    getOrders,
     saveOrder,
     saveUpdatedOrder
 } from './businessLogic.js'
@@ -25,21 +25,21 @@ let freeDeliveryThreshold = Number(process.env.FREE_DELIVERY_THRESHOLD ?? 0)
 let deliveryCharge = Number(process.env.DELIVERY_CHARGE ?? 0)
 
 /**
- * Displays all laundry services.
+ * Displays all laundry services with MongoDB identifiers.
  *
  * @returns {Promise<void>} Displays the services.
  */
 async function showServices() {
     let services = await getServices()
 
-    console.log("Service ID".padEnd(11) + "Service".padEnd(26) + "Unit".padEnd(9) + "Price")
-    console.log("---------- ------------------------- -------- --------")
+    console.log("Service ID".padEnd(26) + "Service".padEnd(26) + "Unit".padEnd(12) + "Price")
+    console.log("--------------------------------------------------------------------------")
 
     for (let service of services) {
         console.log(
-            service.serviceId.padEnd(11) +
+            service._id.toString().padEnd(26) +
             service.name.padEnd(26) +
-            service.unit.padEnd(9) +
+            service.unit.padEnd(12) +
             service.price.toFixed(2)
         )
     }
@@ -51,7 +51,7 @@ async function showServices() {
  * @returns {Promise<void>} Displays the customer's orders.
  */
 async function viewOrders() {
-    let customerId = prompt("Enter customer ID: ")
+    let customerId = prompt("Enter customer MongoDB ID: ")
 
     let customer = await getCustomer(customerId)
 
@@ -60,12 +60,12 @@ async function viewOrders() {
         return
     }
 
-    let orders = await getCustomerOrders(customerId)
+    let orders = await getCustomerOrders(customer._id)
     let services = await getServices()
 
     console.log("Orders for " + customer.name)
-    console.log("Order ID Order Date Status Total")
-    console.log("-------- ---------- --------- --------")
+    console.log("Order ID".padEnd(26) + "Order Date".padEnd(13) + "Status".padEnd(15) + "Total")
+    console.log("--------------------------------------------------------------------------")
 
     for (let order of orders) {
         let total = calcTotal(order, services)
@@ -78,9 +78,9 @@ async function viewOrders() {
         )
 
         console.log(
-            order.orderId.padEnd(9) +
-            order.orderDate.padEnd(11) +
-            order.status.padEnd(10) +
+            order._id.toString().padEnd(26) +
+            order.orderDate.padEnd(13) +
+            order.status.padEnd(15) +
             pricing.finalTotal.toFixed(2)
         )
     }
@@ -92,7 +92,7 @@ async function viewOrders() {
  * @returns {Promise<void>} Updates the order status.
  */
 async function updateOrderStatus() {
-    let orderId = prompt("Enter order ID: ")
+    let orderId = prompt("Enter order MongoDB ID: ")
 
     let order = await getOrder(orderId)
 
@@ -112,18 +112,18 @@ async function updateOrderStatus() {
 
     order.status = newStatus
 
-    await saveUpdatedOrder(orderId, order)
+    await saveUpdatedOrder(order._id, order)
 
     console.log("Order status updated")
 }
 
 /**
- * Creates a new laundry order.
+ * Creates a new laundry order using MongoDB identifiers.
  *
  * @returns {Promise<void>} Creates a new order.
  */
 async function createNewOrder() {
-    let customerId = prompt("Enter customer ID: ")
+    let customerId = prompt("Enter customer MongoDB ID: ")
 
     let customer = await getCustomer(customerId)
 
@@ -131,20 +131,6 @@ async function createNewOrder() {
         console.log("Customer not found")
         return
     }
-
-    let orders = await getOrders()
-
-    let maxOrderNumber = 0
-
-    for (let order of orders) {
-        let orderNumber = Number(order.orderId.substring(1))
-
-        if (orderNumber > maxOrderNumber) {
-            maxOrderNumber = orderNumber
-        }
-    }
-
-    let newOrderId = "O" + String(maxOrderNumber + 1).padStart(3, "0")
 
     let today = new Date()
     let year = today.getFullYear()
@@ -156,7 +142,7 @@ async function createNewOrder() {
     let items = []
 
     while (true) {
-        let serviceId = prompt("Enter service ID (blank to finish): ")
+        let serviceId = prompt("Enter service MongoDB ID (blank to finish): ")
 
         if (serviceId === "") {
             break
@@ -171,13 +157,13 @@ async function createNewOrder() {
 
         let quantity = Number(prompt("Enter quantity: "))
 
-        if (quantity <= 0) {
+        if (Number.isFinite(quantity) === false || quantity <= 0) {
             console.log("Invalid quantity")
             continue
         }
 
         items.push({
-            serviceId: serviceId,
+            serviceId: service._id,
             quantity: quantity
         })
     }
@@ -188,8 +174,7 @@ async function createNewOrder() {
     }
 
     let order = buildOrder(
-        newOrderId,
-        customerId,
+        customer._id,
         items,
         orderDate
     )
@@ -203,19 +188,19 @@ async function createNewOrder() {
         deliveryCharge
     )
 
-    await saveOrder(order)
+    let savedOrder = await saveOrder(order)
 
-    console.log("Order " + newOrderId + " created")
+    console.log("Order " + savedOrder._id.toString() + " created")
     console.log("Total price: " + pricing.finalTotal.toFixed(2) + " QAR")
 }
 
 /**
-     * Displays the details and invoice for an order.
-     *
-     * @returns {Promise<void>} Displays the order details.
-     */
+ * Displays the details and invoice for an order.
+ *
+ * @returns {Promise<void>} Displays the order details.
+ */
 async function viewOrderDetails() {
-    let orderId = prompt("Enter order ID: ")
+    let orderId = prompt("Enter order MongoDB ID: ")
 
     let details = await getOrderDetails(
         orderId,
@@ -235,25 +220,25 @@ async function viewOrderDetails() {
     let pricing = details.pricing
 
     console.log("")
-    console.log("Order ID: " + order.orderId)
+    console.log("Order ID: " + order._id.toString())
     console.log("Order Date: " + order.orderDate)
     console.log("Status: " + order.status)
     console.log("Customer: " + customer.name)
 
     console.log("")
-    console.log("Service ID Service                  Qty   Unit Price   Total")
-    console.log("---------- ----------------------- ----- ------------ --------")
+    console.log("Service ID".padEnd(26) + "Service".padEnd(26) + "Qty".padEnd(8) + "Unit Price".padEnd(14) + "Total")
+    console.log("--------------------------------------------------------------------------------")
 
     for (let item of order.items) {
         for (let service of services) {
-            if (item.serviceId === service.serviceId) {
+            if (item.serviceId.toString() === service._id.toString()) {
                 let itemTotal = item.quantity * service.price
 
                 console.log(
-                    service.serviceId.padEnd(11) +
-                    service.name.padEnd(24) +
-                    String(item.quantity).padEnd(6) +
-                    service.price.toFixed(2).padEnd(13) +
+                    service._id.toString().padEnd(26) +
+                    service.name.padEnd(26) +
+                    String(item.quantity).padEnd(8) +
+                    service.price.toFixed(2).padEnd(14) +
                     itemTotal.toFixed(2)
                 )
             }
@@ -268,8 +253,6 @@ async function viewOrderDetails() {
     console.log("Delivery: " + pricing.deliveryCharge.toFixed(2) + " QAR")
     console.log("Final Total: " + pricing.finalTotal.toFixed(2) + " QAR")
 }
-
-
 
 /**
  * Displays the main application menu.

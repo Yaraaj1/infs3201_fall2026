@@ -1,3 +1,4 @@
+
 import {
     findCustomer,
     findCustomerByPhone,
@@ -11,31 +12,29 @@ import {
 } from './persistence.js'
 
 /**
- * Finds a customer by their ID.
+ * Finds a customer by MongoDB ID.
  *
- * @param {string} customerId The ID of the customer to find.
+ * @param {string} customerId The customer's MongoDB ID.
  * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function getCustomer(customerId) {
     return await findCustomer(customerId)
 }
 
-
 /**
- * Finds a customer by their phone number.
+ * Finds a customer by phone number.
  *
- * @param {string} phoneNumber The phone number of the customer to find.
+ * @param {string} phoneNumber The phone number to find.
  * @returns {Promise<Object|null>} The customer if found, otherwise null.
  */
 async function getCustomerByPhone(phoneNumber) {
     return await findCustomerByPhone(phoneNumber)
 }
 
-
 /**
- * Gets a laundry service by its ID.
+ * Gets a laundry service by MongoDB ID.
  *
- * @param {string} serviceId The ID of the service to find.
+ * @param {string} serviceId The service's MongoDB ID.
  * @returns {Promise<Object|null>} The service if found, otherwise null.
  */
 async function getService(serviceId) {
@@ -43,9 +42,9 @@ async function getService(serviceId) {
 }
 
 /**
- * Gets the details of an order.
+ * Gets an order by MongoDB ID.
  *
- * @param {string} oid The ID of the order to find.
+ * @param {string} orderId The order's MongoDB ID.
  * @returns {Promise<Object|null>} The order if found, otherwise null.
  */
 async function getOrder(orderId) {
@@ -55,7 +54,7 @@ async function getOrder(orderId) {
 /**
  * Gets all orders belonging to a customer.
  *
- * @param {string} customerId The ID of the customer.
+ * @param {string} customerId The customer's MongoDB ID.
  * @returns {Promise<Array<Object>>} The customer's orders.
  */
 async function getCustomerOrders(customerId) {
@@ -93,9 +92,9 @@ async function saveOrder(order) {
 /**
  * Saves an updated order.
  *
- * @param {string} orderId The ID of the order to update.
+ * @param {string} orderId The MongoDB ID of the order.
  * @param {Object} order The updated order information.
- * @returns {Promise<Object|null>} The updated order, or null if it was not found.
+ * @returns {Promise<Object|null>} The updated order, or null if not found.
  */
 async function saveUpdatedOrder(orderId, order) {
     return await updateOrder(orderId, order)
@@ -104,11 +103,11 @@ async function saveUpdatedOrder(orderId, order) {
 /**
  * Gets an order with its customer, services, and pricing information.
  *
- * @param {string} orderId The ID of the order to find.
+ * @param {string} orderId The MongoDB ID of the order.
  * @param {number} minimumOrderCharge The minimum order charge.
  * @param {number} freeDeliveryThreshold The subtotal threshold for free delivery.
  * @param {number} deliveryCharge The delivery charge.
- * @returns {Promise<Object|null>} The order details, or null if the order does not exist.
+ * @returns {Promise<Object|null>} The order details, or null if not found.
  */
 async function getOrderDetails(
     orderId,
@@ -142,8 +141,20 @@ async function getOrderDetails(
     }
 }
 
+/**
+ * Checks whether two MongoDB IDs are equal.
+ *
+ * @param {Object} firstId The first MongoDB ID.
+ * @param {Object} secondId The second MongoDB ID.
+ * @returns {Boolean} True if the IDs are equal.
+ */
+function idsAreEqual(firstId, secondId) {
+    if (firstId === undefined || secondId === undefined) {
+        return false
+    }
 
-
+    return firstId.toString() === secondId.toString()
+}
 
 /**
  * Calculates the total price of an order.
@@ -157,7 +168,7 @@ function calcTotal(order, services) {
 
     for (let item of order.items) {
         for (let service of services) {
-            if (item.serviceId === service.serviceId) {
+            if (idsAreEqual(item.serviceId, service._id)) {
                 total = total + item.quantity * service.price
             }
         }
@@ -212,7 +223,7 @@ function validateOrder(items, services) {
         let serviceFound = false
 
         for (let service of services) {
-            if (item.serviceId === service.serviceId) {
+            if (idsAreEqual(item.serviceId, service._id)) {
                 serviceFound = true
                 break
             }
@@ -229,18 +240,16 @@ function validateOrder(items, services) {
 /**
  * Builds a new order object.
  *
- * @param {String} orderId The ID of the new order.
- * @param {String} customerId The ID of the customer.
+ * @param {String} customerId The MongoDB ID of the customer.
  * @param {Array} items The items in the order.
  * @param {String} orderDate The order date.
  * @returns {Object} The new order.
  */
-function buildOrder(orderId, customerId, items, orderDate) {
+function buildOrder(customerId, items, orderDate) {
     let order = {
-        orderId: orderId,
         customerId: customerId,
         orderDate: orderDate,
-        status: "Received",
+        status: 'Received',
         items: items
     }
 

@@ -1,7 +1,8 @@
+
 <h2>Update Order Status</h2>
 
 <form action="/update-status" method="POST">
-    <label for="orderId">Order ID:</label>
+    <label for="orderId">Order MongoDB ID:</label>
     <input type="text" id="orderId" name="orderId" required>
 
     <label for="status">New Status:</label>
@@ -13,7 +14,6 @@
         <option value="Ready">Ready</option>
         <option value="Delivered">Delivered</option>
     </select>
-
 
     <button type="submit">Update Status</button>
 </form>
