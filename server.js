@@ -22,7 +22,12 @@ const PORT = 3001
 const COOKIE_NAME = 'laundrySession'
 
 app.engine('handlebars', engine({
-    defaultLayout: 'main'
+    defaultLayout: 'main',
+    helpers: {
+        eq: function (firstValue, secondValue) {
+            return firstValue === secondValue
+        }
+    }
 }))
 
 app.set('view engine', 'handlebars')
@@ -103,6 +108,10 @@ async function checkUserSession(req, res, next) {
 }
 
 app.use(checkUserSession)
+app.use(function (req, res, next) {
+    res.locals.session = req.session
+    next()
+})
 
 /**
  * Displays the home page.
@@ -178,6 +187,33 @@ app.get('/welcome', function (req, res) {
         userType: req.session.userType
     })
 })
+
+
+/**
+ * Displays the logged-in customer's dashboard and orders.
+ */
+app.get('/dashboard', async function (req, res) {
+    if (req.session === null) {
+        return res.redirect('/login')
+    }
+
+    if (req.session.userType !== 'customer') {
+        return res.status(403).send('Access denied')
+    }
+
+    try {
+        let orders = await getCustomerOrders(req.session.userId)
+
+        res.render('dashboard', {
+            title: 'My Dashboard',
+            orders: orders
+        })
+    } catch (error) {
+        console.error(error)
+        res.status(500).send('Unable to retrieve your orders')
+    }
+})
+
 
 /**
  * Logs the user out and deletes the session.

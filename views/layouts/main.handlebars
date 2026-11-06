@@ -10,12 +10,30 @@
 <body>
     <header>
         <h1>Laundry Service</h1>
+
         <nav>
-            <a href="/">Home</a>
-            <a href="/customer">Find Customer</a>
-            <a href="/services">Services</a>
-            <a href="/orders">Orders</a>
-            <a href="/update-status">Update Status</a>
+            {{#if session}}
+                {{#if (eq session.userType "customer")}}
+                    <a href="/services">Services</a>
+                    <a href="/dashboard">Dashboard</a>
+
+                    <form action="/logout" method="POST">
+                        <button type="submit">Logout</button>
+                    </form>
+                {{else}}
+                    <a href="/">Home</a>
+                    <a href="/services">Services</a>
+                    <a href="/orders">Orders</a>
+                    <a href="/update-status">Update Status</a>
+
+                    <form action="/logout" method="POST">
+                        <button type="submit">Logout</button>
+                    </form>
+                {{/if}}
+            {{else}}
+                <a href="/">Home</a>
+                <a href="/login">Login</a>
+            {{/if}}
         </nav>
     </header>
 
