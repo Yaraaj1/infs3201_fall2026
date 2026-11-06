@@ -2,6 +2,11 @@
 import {
     findCustomer,
     findCustomerByPhone,
+    findCustomerByEmail,
+    findStaffUserByEmail,
+    createSession,
+    findSession,
+    deleteSession,
     findService,
     findOrder,
     findOrdersByCustomer,
@@ -10,6 +15,67 @@ import {
     createOrder,
     updateOrder
 } from './persistence.js'
+
+/**
+ * Authenticates a customer or staff user.
+ *
+ * @param {string} email The user's email address.
+ * @param {string} password The user's password.
+ * @returns {Promise<Object|null>} The authenticated user, or null.
+ */
+async function authenticateUser(email, password) {
+    let customer = await findCustomerByEmail(email)
+
+    if (customer !== null && customer.password === password) {
+        return {
+            userId: customer._id,
+            email: customer.email,
+            userType: 'customer'
+        }
+    }
+
+    let staffUser = await findStaffUserByEmail(email)
+
+    if (staffUser !== null && staffUser.password === password) {
+        return {
+            userId: staffUser._id,
+            email: staffUser.email,
+            userType: 'staff'
+        }
+    }
+
+    return null
+}
+
+/**
+ * Starts a login session for a user.
+ *
+ * @param {Object} user The authenticated user.
+ * @returns {Promise<string>} The session token.
+ */
+async function startUserSession(user) {
+    return await createSession(user)
+}
+
+/**
+ * Gets a valid login session.
+ *
+ * @param {string} token The session token.
+ * @returns {Promise<Object|null>} The session, or null.
+ */
+async function getUserSession(token) {
+    return await findSession(token)
+}
+
+/**
+ * Ends a login session.
+ *
+ * @param {string} token The session token.
+ * @returns {Promise<void>} A promise that resolves when deleted.
+ */
+async function endUserSession(token) {
+    return await deleteSession(token)
+}
 
 /**
  * Finds a customer by MongoDB ID.
@@ -308,5 +374,9 @@ export {
     getServices,
     getOrders,
     saveOrder,
-    saveUpdatedOrder
+    saveUpdatedOrder,
+    authenticateUser,
+    startUserSession,
+    getUserSession,
+    endUserSession
 }
