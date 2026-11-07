@@ -1,0 +1,45 @@
+
+<h2>Staff Dashboard</h2>
+
+<h3>All Customer Orders</h3>
+
+<p>Here you can view all laundry orders and update their statuses.</p>
+
+<p>
+    <a href="/update-status">Update Order Status</a>
+</p>
+
+{{#if orders.length}}
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer ID</th>
+                <th>Order Date</th>
+                <th>Status</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{#each orders}}
+                <tr>
+                    <td>{{this._id}}</td>
+                    <td>{{this.customerId}}</td>
+                    <td>{{this.orderDate}}</td>
+                    <td>{{this.status}}</td>
+                    <td>
+                        {{#each this.items}}
+                            <p>
+                                Service ID: {{this.serviceId}}
+                                - Quantity: {{this.quantity}}
+                            </p>
+                        {{/each}}
+                    </td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+{{else}}
+    <p>No orders are currently available.</p>
+{{/if}}

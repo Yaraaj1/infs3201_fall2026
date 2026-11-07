@@ -107,6 +107,27 @@ async function checkUserSession(req, res, next) {
     }
 }
 
+
+/**
+ * Allows access only to logged-in staff users.
+ *
+ * @param {Object} req The Express request.
+ * @param {Object} res The Express response.
+ * @param {Function} next The next middleware function.
+ */
+function requireStaff(req, res, next) {
+    if (req.session === null) {
+        return res.redirect('/login')
+    }
+
+    if (req.session.userType !== 'staff') {
+        return res.status(403).send('Access denied')
+    }
+
+    next()
+}
+
+
 app.use(checkUserSession)
 app.use(function (req, res, next) {
     res.locals.session = req.session
@@ -189,28 +210,38 @@ app.get('/welcome', function (req, res) {
 })
 
 
+
 /**
- * Displays the logged-in customer's dashboard and orders.
+ * Displays the correct dashboard for the logged-in user.
  */
 app.get('/dashboard', async function (req, res) {
     if (req.session === null) {
         return res.redirect('/login')
     }
 
-    if (req.session.userType !== 'customer') {
-        return res.status(403).send('Access denied')
-    }
-
     try {
-        let orders = await getCustomerOrders(req.session.userId)
+        if (req.session.userType === 'customer') {
+            let orders = await getCustomerOrders(req.session.userId)
 
-        res.render('dashboard', {
-            title: 'My Dashboard',
-            orders: orders
-        })
+            return res.render('dashboard', {
+                title: 'My Dashboard',
+                orders: orders
+            })
+        }
+
+        if (req.session.userType === 'staff') {
+            let orders = await getOrders()
+
+            return res.render('staff-dashboard', {
+                title: 'Staff Dashboard',
+                orders: orders
+            })
+        }
+
+        return res.status(403).send('Access denied')
     } catch (error) {
         console.error(error)
-        res.status(500).send('Unable to retrieve your orders')
+        res.status(500).send('Unable to retrieve dashboard information')
     }
 })
 
@@ -252,7 +283,7 @@ app.get('/services', async function (req, res) {
     }
 })
 
-app.get('/orders', async function (req, res) {
+app.get('/orders', requireStaff, async function (req, res) {
     try {
         let orders = await getOrders()
 
@@ -266,13 +297,13 @@ app.get('/orders', async function (req, res) {
     }
 })
 
-app.get('/update-status', function (req, res) {
+app.get('/update-status', requireStaff, function (req, res) {
     res.render('update-status', {
         title: 'Update Order Status'
     })
 })
 
-app.post('/update-status', async function (req, res) {
+app.post('/update-status', requireStaff, async function (req, res) {
     let orderId = (req.body.orderId || '').trim()
     let status = req.body.status
 
@@ -306,13 +337,13 @@ app.post('/update-status', async function (req, res) {
     }
 })
 
-app.get('/customer', function (req, res) {
+app.get('/customer', requireStaff, function (req, res) {
     res.render('customer', {
         title: 'Find Customer'
     })
 })
 
-app.post('/customer', async function (req, res) {
+app.post('/customer', requireStaff, async function (req, res) {
     let phoneNumber = (req.body.phone || '').trim()
 
     if (phoneNumber === '') {
