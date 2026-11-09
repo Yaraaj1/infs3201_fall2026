@@ -1,8 +1,9 @@
 
+# INFS3201 – Assignment 4
+
 connection string: mongodb+srv://60309760:12class34@infs3201.gxqnptm.mongodb.net/
 
 
-# INFS3201 – Assignment 4
 ## Laundry Service Management System
 
 ### 1. Project Description
