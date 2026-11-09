@@ -100,6 +100,11 @@ async function checkUserSession(req, res, next) {
 
         req.session = session
 
+        res.setHeader(
+            'Set-Cookie',
+            COOKIE_NAME + '=' + encodeURIComponent(token) + '; Max-Age=600; Path=/; HttpOnly; SameSite=Lax'
+        )
+
         return next()
     } catch (error) {
         console.error(error)

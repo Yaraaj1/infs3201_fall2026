@@ -133,19 +133,12 @@ async function createSession(sessionData) {
 }
 
 /**
- * Finds a login session using its token.
- *
- * @param {string} token The session token.
- * @returns {Promise<Object|null>} The session if valid, otherwise null.
+ * Finds a valid session and extends its expiry by 10 minutes.
+ * @param {string} token - The session token.
+ * @returns {Promise<Object|null>} The session or null if expired.
  */
 async function findSession(token) {
-    await connectToDatabase()
-
-    if (typeof token !== 'string' || token === '') {
-        return null
-    }
-
-    let tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
 
     let session = await sessions.findOne({ _id: tokenHash })
 
@@ -157,6 +150,15 @@ async function findSession(token) {
         await sessions.deleteOne({ _id: tokenHash })
         return null
     }
+
+    let newExpiry = new Date(Date.now() + 10 * 60 * 1000)
+
+    await sessions.updateOne(
+        { _id: tokenHash },
+        { $set: { expiresAt: newExpiry } }
+    )
+
+    session.expiresAt = newExpiry
 
     return session
 }
