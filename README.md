@@ -1,73 +1,211 @@
-# INFS3201 – Web Technologies II
-## Assignment 3 – Laundry Management System
 
 connection string: mongodb+srv://60309760:12class34@infs3201.gxqnptm.mongodb.net/
 
 
+# INFS3201 – Assignment 4
+## Laundry Service Management System
 
-This project builds on Assignment 2 by using MongoDB for data storage and Express with Handlebars to display the website.
+### 1. Project Description
 
-## Application Structure
+This project is a Laundry Service Management System developed using Node.js, Express.js, Handlebars, and MongoDB.
 
-The project uses three layers:
+The application supports two types of users: customers and staff members. Customers can view laundry services, create orders, and track their own orders. Staff members can view all customer orders, update order statuses, and search for customers using their phone numbers.
 
-- **Presentation:** `server.js`, the Handlebars views, and the CSS files.
-- **Business Logic:** `businessLogic.js`, which handles application rules and order status updates.
-- **Persistence:** `persistence.js`, which connects to MongoDB and retrieves or updates data.
+### 2. Technologies Used
 
-## Pages
+- Node.js
+- Express.js
+- Express Handlebars
+- MongoDB
+- JavaScript
+- HTML and CSS
+- dotenv
 
-- **Home:** Displays the navigation menu.
-- **Find Customer:** Searches for a customer by ID and displays their information and orders.
-- **Laundry Services:** Displays the available services and their prices.
-- **All Orders:** Displays orders and their current statuses.
-- **Update Order Status:** Allows an order's status to be changed when the transition is valid.
+### 3. Project Features
 
-## Order Statuses
+#### Customer Features
+- Log in using email and password.
+- View available laundry services.
+- Create new laundry orders.
+- View personal orders through the customer dashboard.
+- View order details and current order status.
+- Log out securely.
 
-Orders follow this sequence:
+#### Staff Features
+- Log in using staff credentials.
+- View all customer orders.
+- Update order statuses.
+- Search for customers using their phone numbers.
+- View customer information and their orders.
+- Log out.
 
-`Received → Washing → Ready → Delivered`
+#### Authentication and Session Management
+- Customer and staff authentication.
+- User accounts stored in MongoDB.
+- MongoDB-based session management.
+- Sessions expire after 10 minutes of inactivity.
+- Sliding session expiration extends the session by 10 minutes after each valid activity.
+- Staff-only routes are protected from unauthorized access.
 
-A status cannot be moved backwards or changed to an invalid state.
+#### Database Management
+- MongoDB is used to store customers, services, orders, staff users, and sessions.
+- MongoDB-generated `_id` identifiers are used instead of application-generated identifiers.
+- Customer and service references in orders use MongoDB ObjectIds.
 
-## Database
+### 4. Database Collections
 
-The application uses MongoDB with the database name `infs3201_fall2026` and these collections:
+The application uses the following MongoDB collections:
 
-- `customers`
-- `services`
-- `orders`
+| Collection | Description |
+|---|---|
+| `customers` | Stores customer information and login credentials. |
+| `services` | Stores available laundry services and prices. |
+| `orders` | Stores customer orders, selected services, quantities, and statuses. |
+| `staff_users` | Stores staff login credentials. |
+| `sessions` | Stores active user sessions and expiration times. |
 
-The MongoDB connection string is configured through an environment variable.
+Database name: `infs3201_fall2026`
 
-## Setup
+### 5. Installation and Setup
 
-1. Install [Node.js](https://nodejs.org/).
-2. Install the project dependencies:
+#### Requirements
+- Node.js installed.
+- MongoDB Atlas account.
+- MongoDB connection string.
 
-   ```bash
-   npm install
-   ```
+#### Step 1: Clone the Repository
 
-3. Create a `.env` file using `.env.example` as a reference.
-4. Set `MONGODB_URI` in `.env` to your MongoDB connection string.
-5. Start the application using the start command defined in `package.json`.
-6. Open `http://localhost:3001` in your browser.
+```bash
+git clone https://github.com/Yaraaj1/infs3201_fall2026.git
+```
 
-## MongoDB Indexes
+Navigate into the project folder:
 
-The following ascending indexes were created in MongoDB Compass:
+```bash
+cd infs3201_fall2026
+```
 
-- `customers.customerId` – supports customer searches by ID.
-- `services.serviceId` – supports service searches by ID.
-- `orders.orderId` – supports order searches by ID.
-- `orders.customerId` – supports searches for a customer's orders.
+#### Step 2: Install Dependencies
 
-Each index uses ascending order (`1`). MongoDB's default `_id` indexes are also present.
+```bash
+npm install
+```
 
-## Notes
+#### Step 3: Configure Environment Variables
 
-- The website uses server-rendered Handlebars pages and external CSS.
-- Database operations are handled in the persistence layer.
-- The `.env` file contains local configuration and should not be committed to Git.
+Create a `.env` file in the project root directory.
+
+Use the following structure:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+
+MINIMUM_ORDER_CHARGE=25
+FREE_DELIVERY_THRESHOLD=50
+DELIVERY_CHARGE=10
+```
+
+Replace the MongoDB URI with your own connection string.
+
+The `.env.example` file provides a template for the required environment variables.
+
+#### Step 4: Start the Application
+
+```bash
+node server.js
+```
+
+Open the application in your browser:
+
+```text
+http://localhost:3001
+```
+
+### 6. User Accounts
+
+The project includes sample customer and staff accounts for testing.
+
+The available email addresses and passwords are documented in `users.md`.
+
+Customer and staff accounts are listed separately in that file.
+
+### 7. Main Application Routes
+
+| Route | Method | Description |
+|---|---|---|
+| `/` | GET | Displays the home page. |
+| `/login` | GET | Displays the login page. |
+| `/login` | POST | Authenticates the user. |
+| `/welcome` | GET | Displays the user's account type. |
+| `/services` | GET | Displays available laundry services. |
+| `/orders` | GET | Displays all orders for staff. |
+| `/orders` | POST | Creates a new customer order. |
+| `/dashboard` | GET | Displays the appropriate customer or staff dashboard. |
+| `/update-status` | GET | Displays the staff order status update page. |
+| `/update-status` | POST | Updates an order status. |
+| `/customer` | GET | Displays the customer search page for staff. |
+| `/customer` | POST | Searches for a customer by phone number. |
+| `/logout` | POST | Logs out the current user. |
+
+### 8. Database Migration
+
+The `db_transform.js` script was created to migrate the database from application-generated identifiers to MongoDB-generated `_id` identifiers.
+
+The migration also updates customer and service references inside order documents.
+
+The migration script is intended to run only once. A database backup is recommended before running it.
+
+The migration process and LLM assistance are documented in `db_conversion.md`.
+
+### 9. Project Structure
+
+```text
+infs3201_fall2026/
+│
+├── public/
+│   └── css/
+│       └── style.css
+│
+├── views/
+│   ├── layouts/
+│   │   └── main.handlebars
+│   ├── customer.handlebars
+│   ├── dashboard.handlebars
+│   ├── home.handlebars
+│   ├── login.handlebars
+│   ├── orders.handlebars
+│   ├── services.handlebars
+│   ├── staff-dashboard.handlebars
+│   ├── update-status.handlebars
+│   └── welcome.handlebars
+│
+├── .env.example
+├── .gitignore
+├── businessLogic.js
+├── customers.json
+├── db_conversion.md
+├── db_transform.js
+├── Main.js
+├── orders.json
+├── package.json
+├── package-lock.json
+├── persistence.js
+├── README.md
+├── server.js
+├── services.json
+└── users.md
+```
+
+### 10. Security and Configuration Notes
+
+- The actual `.env` file is excluded from Git using `.gitignore`.
+- `node_modules` is excluded from the repository.
+- The `.env.example` file contains placeholders rather than actual database credentials.
+- Staff-only routes require staff authentication.
+- Customers can only access their own orders through their dashboard.
+
+### 11. Author
+
+**Course:** INFS3201 – Web Technologies II  
+**Assignment:** Assignment 4  
+**Repository:** [infs3201_fall2026](https://github.com/Yaraaj1/infs3201_fall2026)
