@@ -1,6 +1,10 @@
 
 <h2>Our Laundry Services</h2>
 
+{{#if error}}
+    <p class="error">{{error}}</p>
+{{/if}}
+
 {{#if services.length}}
     <table>
         <thead>
@@ -22,6 +26,39 @@
             {{/each}}
         </tbody>
     </table>
+
+    {{#if session}}
+        {{#if (eq session.userType "customer")}}
+            <h3>Create a New Order</h3>
+
+            <form action="/orders" method="POST">
+                <p>Enter the quantity for each service you want.</p>
+
+                {{#each services}}
+                    <div>
+                        <label>
+                            {{this.name}} ({{this.unit}})
+                            - {{this.price}} QAR
+                        </label>
+
+                        <input
+                            type="number"
+                            name="quantity_{{this._id}}"
+                            min="0"
+                            step="any"
+                            value="0"
+                        >
+                    </div>
+                {{/each}}
+
+                <button type="submit">Place Order</button>
+            </form>
+        {{else}}
+            <p>Staff users can view and manage orders from the Dashboard.</p>
+        {{/if}}
+    {{else}}
+        <p>Please <a href="/login">log in</a> as a customer to place an order.</p>
+    {{/if}}
 {{else}}
     <p>No services are currently available.</p>
 {{/if}}

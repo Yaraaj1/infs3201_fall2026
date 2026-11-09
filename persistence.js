@@ -134,10 +134,17 @@ async function createSession(sessionData) {
 
 /**
  * Finds a valid session and extends its expiry by 10 minutes.
- * @param {string} token - The session token.
- * @returns {Promise<Object|null>} The session or null if expired.
+ *
+ * @param {string} token The session token.
+ * @returns {Promise<Object|null>} The session or null if expired or invalid.
  */
 async function findSession(token) {
+    await connectToDatabase()
+
+    if (typeof token !== 'string' || token === '') {
+        return null
+    }
+
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
 
     let session = await sessions.findOne({ _id: tokenHash })
