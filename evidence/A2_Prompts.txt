@@ -1,0 +1,7 @@
+Improve the visual appearance of my existing laundry service invoice generated with pdf-lib.
+
+Make the invoice simple, clean, and professional. Use a white background, dark blue headings, light blue section backgrounds, clear spacing, and a neatly aligned service table. Highlight the final payable amount.
+
+Keep all existing functionality unchanged, including MongoDB data retrieval, customer information, service quantities, unit prices, subtotal, service charge, delivery charge, and final total.
+
+Continue using pdf-lib and preserve the existing project architecture.
