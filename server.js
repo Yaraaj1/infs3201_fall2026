@@ -19,8 +19,12 @@ import {
     authenticateUser,
     startUserSession,
     getUserSession,
+    getOrderDetails,
     endUserSession
 } from './businessLogic.js'
+
+import { generateInvoice } from './invoices/invoice.js'
+import { sendInvoiceEmail } from './email.js'
 
 const app = express()
 const PORT = 3001
@@ -545,6 +549,7 @@ async function updateOrderStatus(req, res) {
         if (order === null) {
             return res.status(404).send('Order not found')
         }
+        let previousStatus = order.status
 
         if (!validateStatus(order.status, status)) {
             return res.status(400).send('Invalid State')
@@ -556,6 +561,26 @@ async function updateOrderStatus(req, res) {
 
         if (updatedOrder === null) {
             return res.status(404).send('Order not found')
+        }
+        if (previousStatus === 'Washing' && status === 'Ready') {
+            let invoicePath = await generateInvoice(orderId)
+
+            let details = await getOrderDetails(
+                orderId,
+                minimumOrderCharge,
+                freeDeliveryThreshold,
+                deliveryCharge
+            )
+
+            if (details === null || details.customer === null) {
+                throw new Error('Unable to retrieve customer information')
+            }
+
+            await sendInvoiceEmail(
+                details.customer,
+                updatedOrder,
+                invoicePath
+            )
         }
 
         return res.redirect('/orders')

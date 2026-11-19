@@ -335,16 +335,21 @@ async function generateInvoice(orderId) {
     return filePath
 }
 
-// Run the invoice generator from the terminal
-let orderId = process.argv[2]
+// Run the invoice generator only when this file is executed directly
+let isMainFile = process.argv[1] &&
+    path.resolve(process.argv[1]) === currentFile
 
-if (orderId) {
-    generateInvoice(orderId).catch(function (error) {
-        console.error('Invoice generation failed:', error.message)
-    })
-} else {
-    console.log('Please provide an order ID.')
-    console.log('Example: node invoices/invoice.js YOUR_ORDER_ID')
+if (isMainFile) {
+    let orderId = process.argv[2]
+
+    if (orderId) {
+        generateInvoice(orderId).catch(function (error) {
+            console.error('Invoice generation failed:', error.message)
+        })
+    } else {
+        console.log('Please provide an order ID.')
+        console.log('Example: node invoices/invoice.js YOUR_ORDER_ID')
+    }
 }
 
 export { generateInvoice }
