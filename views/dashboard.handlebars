@@ -1,5 +1,28 @@
 
 <h2>My Dashboard</h2>
+<h3>My Pickup Location Photo</h3>
+
+{{#if customer.photoFilename}}
+    <img
+        src="/customer-photo"
+        alt="My pickup location"
+        class="customer-photo"
+    >
+{{else}}
+    <p>You have not uploaded a pickup location photo yet.</p>
+{{/if}}
+
+<form action="/upload-photo" method="POST" enctype="multipart/form-data">
+    <label for="photo">Upload or replace your pickup location photo (JPG only):</label>
+    <input
+        type="file"
+        id="photo"
+        name="photo"
+        accept=".jpg,image/jpeg"
+        required
+    >
+    <button type="submit">Upload Photo</button>
+</form>
 
 <h3>My Orders</h3>
 

@@ -13,7 +13,8 @@ import {
     getAllServices,
     getAllOrders,
     createOrder,
-    updateOrder
+    updateOrder,
+    updateCustomerPhoto
 } from './persistence.js'
 
 /**
@@ -85,6 +86,17 @@ async function endUserSession(token) {
  */
 async function getCustomer(customerId) {
     return await findCustomer(customerId)
+}
+
+/**
+ * Updates a customer's photo filename.
+ *
+ * @param {string} customerId The customer's MongoDB ID.
+ * @param {string} photoFilename The generated photo filename.
+ * @returns {Promise<Object|null>} The updated customer, or null.
+ */
+async function saveCustomerPhoto(customerId, photoFilename) {
+    return await updateCustomerPhoto(customerId, photoFilename)
 }
 
 /**
@@ -367,6 +379,7 @@ export {
     pricingRules,
     getOrderDetails,
     getCustomer,
+    saveCustomerPhoto,
     getCustomerByPhone,
     getService,
     getOrder,

@@ -19,7 +19,19 @@
 
     {{#if customer.name}}
         <p><strong>Name:</strong> {{customer.name}}</p>
+        
     {{/if}}
+
+    {{#if customer.photoFilename}}
+    <h3>Pickup Location Photo</h3>
+    <img
+        src="/staff/customer-photo/{{customer._id}}"
+        alt="Customer pickup location"
+        class="customer-photo"
+    >
+{{else}}
+    <p>No pickup location photo uploaded.</p>
+{{/if}}
 
     <h2>Customer Orders</h2>
 

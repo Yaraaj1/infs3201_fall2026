@@ -1,11 +1,18 @@
 
 import 'dotenv/config'
 import express from 'express'
+import fileUpload from 'express-fileupload'
 import { engine } from 'express-handlebars'
+import path from 'path'
+import crypto from 'crypto'
+import fs from 'fs/promises'
+import { fileURLToPath } from 'url'
 
 import {
+    getCustomer,
     getCustomerByPhone,
     getCustomerOrders,
+    saveCustomerPhoto,
     getServices,
     getOrders,
     getOrder,
@@ -29,6 +36,10 @@ import { sendInvoiceEmail } from './email.js'
 const app = express()
 const PORT = 3001
 const COOKIE_NAME = 'laundrySession'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const photosDirectory = path.join(__dirname, 'photos')
 
 const minimumOrderCharge = Number(process.env.MINIMUM_ORDER_CHARGE ?? 0)
 const freeDeliveryThreshold = Number(process.env.FREE_DELIVERY_THRESHOLD ?? 0)
@@ -187,6 +198,13 @@ function setSessionLocals(req, res, next) {
 app.use(checkUserSession)
 app.use(setSessionLocals)
 
+app.use(fileUpload({
+    limits: {
+        fileSize: 2 * 1024 * 1024
+    },
+    abortOnLimit: false,
+    responseOnLimit: 'Image must be 2MB or smaller'
+}))
 /**
  * Displays the home page.
  *
@@ -310,10 +328,12 @@ async function showDashboard(req, res) {
 
     try {
         if (req.session.userType === 'customer') {
+            let customer = await getCustomer(req.session.userId)
             let orders = await getCustomerOrders(req.session.userId)
 
             return res.render('dashboard', {
                 title: 'My Dashboard',
+                customer: customer,
                 orders: orders
             })
         }
@@ -335,6 +355,112 @@ async function showDashboard(req, res) {
 }
 
 app.get('/dashboard', showDashboard)
+
+/**
+ * Uploads or replaces the logged-in customer's profile photo.
+ *
+ * @param {Object} req The Express request.
+ * @param {Object} res The Express response.
+ * @returns {Promise<void>} Saves the customer photo.
+ */
+async function uploadCustomerPhoto(req, res) {
+    if (!req.files || !req.files.photo) {
+        return res.status(400).send('Please select a JPG image')
+    }
+
+    let photo = req.files.photo
+
+    if (photo.truncated || photo.size > 2 * 1024 * 1024) {
+        return res.status(400).send('Image must be 2MB or smaller')
+    }
+
+    let isJpeg = Buffer.isBuffer(photo.data) &&
+        photo.data.length >= 3 &&
+        photo.data[0] === 0xFF &&
+        photo.data[1] === 0xD8 &&
+        photo.data[2] === 0xFF
+
+    if (!isJpeg ||
+        photo.mimetype !== 'image/jpeg' ||
+        path.extname(photo.name).toLowerCase() !== '.jpg') {
+        return res.status(400).send('Only JPG images are allowed')
+    }
+    let customerId = req.session.userId
+
+    try {
+        let customer = await getCustomer(customerId)
+
+        if (customer === null) {
+            return res.status(404).send('Customer not found')
+        }
+
+        let photoFilename = crypto.randomUUID() + '.jpg'
+        let photoPath = path.join(photosDirectory, photoFilename)
+
+        await photo.mv(photoPath)
+
+        let updatedCustomer = await saveCustomerPhoto(
+            customerId,
+            photoFilename
+        )
+
+        if (updatedCustomer === null) {
+            await fs.unlink(photoPath)
+            return res.status(404).send('Customer not found')
+        }
+
+        if (customer.photoFilename) {
+            let oldPhotoPath = path.join(
+                photosDirectory,
+                path.basename(customer.photoFilename)
+            )
+
+            try {
+                await fs.unlink(oldPhotoPath)
+            } catch (error) {
+                if (error.code !== 'ENOENT') {
+                    console.error(error)
+                }
+            }
+        }
+
+        return res.redirect('/dashboard')
+    } catch (error) {
+        console.error(error)
+        return res.status(500).send('Unable to upload customer photo')
+    }
+}
+
+app.post('/upload-photo', requireCustomer, uploadCustomerPhoto)
+
+/**
+ * Displays the logged-in customer's pickup location photo.
+ *
+ * @param {Object} req The Express request.
+ * @param {Object} res The Express response.
+ * @returns {Promise<void>} Sends the customer's photo.
+ */
+async function showCustomerPhoto(req, res) {
+    try {
+        let customer = await getCustomer(req.session.userId)
+
+        if (customer === null || !customer.photoFilename) {
+            return res.status(404).send('Photo not found')
+        }
+
+        let photoPath = path.join(
+            photosDirectory,
+            path.basename(customer.photoFilename)
+        )
+
+        return res.sendFile(photoPath)
+    } catch (error) {
+        console.error(error)
+        return res.status(500).send('Unable to retrieve photo')
+    }
+}
+
+app.get('/customer-photo', requireCustomer, showCustomerPhoto)
 
 /**
  * Logs the user out and deletes the session.
@@ -466,10 +592,12 @@ async function createCustomerOrder(req, res) {
         )
 
         let savedOrder = await saveOrder(order)
+        let customer = await getCustomer(req.session.userId)
         let orders = await getCustomerOrders(req.session.userId)
 
         return res.render('dashboard', {
             title: 'My Dashboard',
+            customer: customer,
             orders: orders,
             success: 'Your order was created successfully. Order ID: ' +
                 savedOrder._id.toString() +
@@ -646,6 +774,45 @@ async function searchCustomer(req, res) {
 }
 
 app.post('/customer', requireStaff, searchCustomer)
+
+/**
+ * Displays a customer's pickup location photo to staff.
+ *
+ * @param {Object} req The Express request.
+ * @param {Object} res The Express response.
+ * @returns {Promise<void>} Sends the customer's photo.
+ */
+async function showStaffCustomerPhoto(req, res) {
+    try {
+        let customer = await getCustomer(req.params.customerId)
+
+        if (customer === null || !customer.photoFilename) {
+            return res.status(404).send('Photo not found')
+        }
+
+        let photoPath = path.join(
+            photosDirectory,
+            path.basename(customer.photoFilename)
+        )
+
+        await fs.access(photoPath)
+
+        return res.sendFile(photoPath)
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return res.status(404).send('Photo not found')
+        }
+
+        console.error(error)
+        return res.status(500).send('Unable to retrieve customer photo')
+    }
+}
+
+app.get(
+    '/staff/customer-photo/:customerId',
+    requireStaff,
+    showStaffCustomerPhoto
+)
 
 /**
  * Handles requests for pages that do not exist.

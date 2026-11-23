@@ -7,7 +7,7 @@ dotenv.config()
 
 const client = new MongoClient(process.env.MONGODB_URI)
 
-const database = client.db('infs3201_fall2026')
+const database = client.db('assigment5_db')
 
 const customers = database.collection('customers')
 const services = database.collection('services')
@@ -70,6 +70,37 @@ async function findCustomer(customerId) {
 
     return await customers.findOne({ _id: objectId })
 }
+
+/**
+ * Updates a customer's photo filename.
+ *
+ * @param {string} customerId The customer's MongoDB ID.
+ * @param {string} photoFilename The generated photo filename.
+ * @returns {Promise<Object|null>} The updated customer, or null.
+ */
+async function updateCustomerPhoto(customerId, photoFilename) {
+    await connectToDatabase()
+
+    let objectId = convertToObjectId(customerId)
+
+    if (objectId === null) {
+        return null
+    }
+
+    let result = await customers.updateOne(
+        { _id: objectId },
+        { $set: { photoFilename: photoFilename } }
+    )
+
+    if (result.matchedCount === 0) {
+        return null
+    }
+
+    return await customers.findOne({ _id: objectId })
+}
+
+
+
 
 /**
  * Finds a customer by phone number.
@@ -369,5 +400,6 @@ export {
     getAllServices,
     getAllOrders,
     createOrder,
-    updateOrder
+    updateOrder,
+    updateCustomerPhoto
 }
