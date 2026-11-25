@@ -198,13 +198,13 @@ function setSessionLocals(req, res, next) {
 app.use(checkUserSession)
 app.use(setSessionLocals)
 
-app.use(fileUpload({
+const uploadPhotoMiddleware = fileUpload({
     limits: {
         fileSize: 2 * 1024 * 1024
     },
     abortOnLimit: false,
     responseOnLimit: 'Image must be 2MB or smaller'
-}))
+})
 /**
  * Displays the home page.
  *
@@ -431,7 +431,12 @@ async function uploadCustomerPhoto(req, res) {
     }
 }
 
-app.post('/upload-photo', requireCustomer, uploadCustomerPhoto)
+app.post(
+    '/upload-photo',
+    requireCustomer,
+    uploadPhotoMiddleware,
+    uploadCustomerPhoto
+)
 
 /**
  * Displays the logged-in customer's pickup location photo.
